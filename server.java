@@ -29,7 +29,9 @@ public class server {
             // new BufferedInputStream(socket.getInputStream()));
 
             String line = "";
+            while (true) {
 
+            }
             // reads message from client until "Over" is sent
             /*
              * while (!line.equals("Over")) {
@@ -54,6 +56,10 @@ public class server {
     public static void main(String args[]) {
         if (args.length != 2) {
             System.out.println("Incorrect number of args. Please enter Port number and protocol");
+            return;
+        }
+        if (Integer.valueOf(args[0]) < 20000 || Integer.valueOf(args[0]) > 24000) {
+            System.out.println("Please use ports within 20000 to 24000 for security reasons.");
             return;
         }
         server server = new server(Integer.valueOf(args[0]), args[1]);
