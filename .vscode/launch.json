@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "cache",
+            "request": "launch",
+            "mainClass": "cache",
+            "projectName": "Project 1_9fcefc76"
+        },
+        {
+            "type": "java",
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}"

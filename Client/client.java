@@ -1,5 +1,7 @@
 import java.io.*;
 import java.net.*;
+import tcp.tcp_transport;
+import snw.snw_transport;
 
 public class client {
     // initialize socket and input output streams
@@ -51,6 +53,11 @@ public class client {
                     System.out.println("Awaiting server response");
                 } else if (commands[0].equals("get")) {
                     System.out.println("Fetching file");
+                    // PrintWriter out = new PrintWriter(CacheSocket.getOutputStream(), true);
+                    // Setup input stream to receive data from the cache
+                    // BufferedReader in = new BufferedReader(new
+                    // InputStreamReader(CacheSocket.getInputStream()));
+                    tcp_transport.send_message(CacheSocket, "get " + commands[1]);
                 }
             }
         } catch (Exception i) {

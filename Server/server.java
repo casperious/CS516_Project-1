@@ -2,6 +2,8 @@
 // A Java program for a Server
 import java.net.*;
 import java.io.*;
+import tcp.tcp_transport;
+import snw.snw_transport;
 
 public class server {
     // initialize socket and input stream
@@ -9,6 +11,7 @@ public class server {
     private Socket cacheSocket = null;
     private ServerSocket server = null;
     private DataInputStream in = null;
+    private String server_folder = "./server_fl/";
 
     // constructor with port
     public server(int port, String protocol) {
@@ -30,7 +33,45 @@ public class server {
 
             String line = "";
             while (true) {
+                if (protocol.equals("tcp")) {
+                    try {
 
+                        // Setup input and output streams for communication with the client
+                        // DataInputStream inClient = new
+                        // DataInputStream(clientSocket.getInputStream());
+                        // DataOutputStream outClient = new
+                        // DataOutputStream(clientSocket.getOutputStream());
+
+                        DataInputStream inCache = new DataInputStream(cacheSocket.getInputStream());
+                        DataOutputStream outCache = new DataOutputStream(cacheSocket.getOutputStream());
+                        // String messageClient = inClient.readUTF();
+                        String messageCache = inCache.readUTF();
+                        // System.out.println("Client says: " + messageClient);
+                        System.out.println("Cache says: " + messageCache);
+                        String message = "";
+                        // if (messageClient.length() == 0) {
+                        message = messageCache;
+                        // } else {
+                        // message = messageClient;
+                        // }
+                        String[] commands = message.split(" ");
+                        if (commands[0].equals("get")) {
+                            System.out.println("Looking for file in" + server_folder + commands[1]);
+                            String file_dir = server_folder + commands[1];
+                            File file = new File(file_dir);
+
+                            if (file.exists()) {
+                                tcp_transport.send_file(cacheSocket, file_dir);
+                            } else {
+                                System.out.println("File does not exist in server");
+                            }
+                        }
+                    } catch (IOException ioe) {
+                        System.out.println("IOE in cache");
+                    }
+                } else {
+
+                }
             }
             // reads message from client until "Over" is sent
             /*

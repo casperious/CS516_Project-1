@@ -1,4 +1,4 @@
-package snw_transport;
+package snw;
 
 public class snw_transport {
 
