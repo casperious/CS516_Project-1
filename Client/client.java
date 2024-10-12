@@ -10,6 +10,8 @@ public class client {
     private DataInputStream input = null;
     private DataOutputStream out = null;
 
+    private String client_folder = "./client_fl/";
+
     // constructor to put ip address and port
     public client(String ServerIp, int ServerPort, String CacheIp, int CachePort, String protocol) {
         // establish a connection
@@ -58,6 +60,8 @@ public class client {
                     // BufferedReader in = new BufferedReader(new
                     // InputStreamReader(CacheSocket.getInputStream()));
                     tcp_transport.send_message(CacheSocket, "get " + commands[1]);
+                    String file_dir = client_folder + commands[1];
+                    tcp_transport.receiveFile(CacheSocket, file_dir);
                 }
             }
         } catch (Exception i) {

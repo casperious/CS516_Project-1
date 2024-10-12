@@ -62,12 +62,15 @@ public class server {
 
                             if (file.exists()) {
                                 tcp_transport.send_file(cacheSocket, file_dir);
+                                System.out.println("Sending file to cache");
                             } else {
                                 System.out.println("File does not exist in server");
                             }
                         }
                     } catch (IOException ioe) {
                         System.out.println("IOE in cache");
+                    } catch (Exception e) {
+                        System.out.println("Error in file transfer");
                     }
                 } else {
 
