@@ -18,7 +18,6 @@ class ThreadSocket implements Runnable {
     public void run() {
         try {
             System.out.println("Running thread " + Thread.currentThread().getId());
-            String line = "";
             while (true) {
                 if (protocol.equals("tcp")) {
                     try {
@@ -39,6 +38,7 @@ class ThreadSocket implements Runnable {
                             if (file.exists()) {
                                 tcp_transport.send_file(socketRef, file_dir);
                                 System.out.println("Sending file to cache");
+                                tcp_transport.send_message(socketRef, "File delivered from server.");
                             } else {
                                 System.out.println("File does not exist in server");
                             }
@@ -51,14 +51,61 @@ class ThreadSocket implements Runnable {
                             String file_dir = server_folder + filename;
                             File file = new File(file_dir);
                             tcp_transport.receiveFile(socketRef, file_dir);
+                            tcp_transport.send_message(socketRef, "File successfully uploaded.");
+                        } else if (commands[0].equals("quit")) {
+                            System.out.println("Goodbye.");
+                            return;
                         }
                     } catch (IOException ioe) {
                         System.out.println("IOE in cache");
+                        return;
                     } catch (Exception e) {
                         System.out.println("Error in file transfer");
+                        return;
                     }
                 } else {
+                    try {
 
+                        // Setup input and output streams for communication with the client
+                        DataInputStream in = new DataInputStream(socketRef.getInputStream());
+                        // DataInputStream(clientSocket.getInputStream());
+                        DataOutputStream out = new DataOutputStream(socketRef.getOutputStream());
+                        // DataOutputStream(clientSocket.getOutputStream());
+
+                        String message = in.readUTF();
+                        System.out.println("Messaged received is: " + message);
+                        String[] commands = message.split(" ");
+                        if (commands[0].equals("get")) {
+                            System.out.println("Looking for file in" + server_folder + commands[1]);
+                            String file_dir = server_folder + commands[1];
+                            File file = new File(file_dir);
+                            if (file.exists()) {
+                                snw_transport.send_file(socketRef, file_dir);
+                                System.out.println("Sending file to cache");
+                            } else {
+                                System.out.println("File does not exist in server");
+                            }
+                        } else if (commands[0].equals("put")) {
+
+                            String[] file_loc = commands[1].split("/");
+                            int len = file_loc.length;
+                            String filename = file_loc[len - 1];
+                            System.out.println("Putting file in " + server_folder + filename);
+                            String file_dir = server_folder + filename;
+                            File file = new File(file_dir);
+                            snw_transport.receiveFile(socketRef, file_dir);
+
+                        } else if (commands[0].equals("quit")) {
+                            System.out.println("Goodbye.");
+                            return;
+                        }
+                    } catch (IOException ioe) {
+                        System.out.println("IOE in cache");
+                        return;
+                    } catch (Exception e) {
+                        System.out.println("Error in file transfer");
+                        return;
+                    }
                 }
             }
 

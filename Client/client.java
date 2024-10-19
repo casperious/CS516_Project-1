@@ -49,6 +49,8 @@ public class client {
                 System.out.println(commands[0]);
                 if (commands[0].equals("quit")) {
                     System.out.println("Exiting");
+                    tcp_transport.send_message(CacheSocket, "quit ");
+                    tcp_transport.send_message(ServerSocket, "quit ");
                     break;
                 } else if (commands[0].equals("put")) {
                     System.out.println("Uploading file at " + commands[1]);
@@ -56,6 +58,10 @@ public class client {
                     System.out.println("Awaiting server response");
                     tcp_transport.send_message(ServerSocket, "put " + file_dir);
                     tcp_transport.send_file(ServerSocket, file_dir);
+                    DataInputStream in = new DataInputStream(ServerSocket.getInputStream());
+                    String serverResp = in.readUTF();
+                    System.out.println("Server response: " + serverResp);
+
                 } else if (commands[0].equals("get")) {
                     System.out.println("Fetching file");
                     // PrintWriter out = new PrintWriter(CacheSocket.getOutputStream(), true);
@@ -66,6 +72,9 @@ public class client {
                     String file_dir = client_folder + commands[1];
                     tcp_transport.receiveFile(CacheSocket, file_dir);
                     System.out.println("Received file");
+                    DataInputStream in = new DataInputStream(CacheSocket.getInputStream());
+                    String serverResp = in.readUTF();
+                    System.out.println("Server response: " + serverResp);
                 }
             }
         } catch (Exception i) {

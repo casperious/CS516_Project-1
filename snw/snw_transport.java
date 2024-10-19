@@ -37,4 +37,17 @@ public class snw_transport {
 
         fileInputStream.close();
     }
+
+    public static void receiveFile(Socket src, String fileName) throws Exception {
+        int bytes = 0;
+        FileOutputStream fileOutputStream = new FileOutputStream(fileName);
+        DataInputStream in = new DataInputStream(src.getInputStream());
+        long size = in.readLong(); // read file size
+        byte[] buffer = new byte[4 * 1024];
+        while (size > 0 && (bytes = in.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+            fileOutputStream.write(buffer, 0, bytes);
+            size -= bytes; // read upto file size
+        }
+        fileOutputStream.close();
+    }
 }

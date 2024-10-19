@@ -49,17 +49,24 @@ public class cache {
 
                         if (file.exists()) {
                             tcp_transport.send_file(client, file_dir);
+                            tcp_transport.send_message(client, "File delivered from cache.");
                         } else {
                             System.out.println("File does not exist in cache, fetching from server");
                             tcp_transport.send_message(serverSocket, message);
                             tcp_transport.receiveFile(serverSocket, file_dir);
                             tcp_transport.send_file(client, file_dir);
+                            tcp_transport.send_message(client, "File delivered from server.");
                         }
+                    } else if (commands[0].equals("quit")) {
+                        System.out.println("Goodbye.");
+                        return;
                     }
                 } catch (IOException ioe) {
                     System.out.println("IOE in cache");
+                    return;
                 } catch (Exception e) {
                     System.out.println("Error in file transfer");
+                    return;
                 }
             } else {
 
