@@ -1,6 +1,7 @@
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import snw.snw_transport;
 import tcp.tcp_transport;
 
 import java.net.*;
@@ -69,37 +70,43 @@ public class cache {
                     return;
                 }
             } else {
+                try {
 
+                    // Setup input and output streams for communication with the client
+                    DataInputStream in = new DataInputStream(client.getInputStream());
+                    // DataOutputStream out = new DataOutputStream(client.getOutputStream());
+                    String message = in.readUTF();
+                    System.out.println("Client says: " + message);
+                    String[] commands = message.split(" ");
+                    if (commands[0].equals("get")) {
+                        System.out.println("Looking for file in" + cache_folder + commands[1]);
+                        String file_dir = cache_folder + commands[1];
+                        File file = new File(file_dir);
+
+                        if (file.exists()) {
+                            snw_transport.send_file(client, file_dir);
+                            tcp_transport.send_message(client, "File delivered from cache.");
+                        } else {
+                            System.out.println("File does not exist in cache, fetching from server");
+                            tcp_transport.send_message(serverSocket, message);
+                            snw_transport.receiveFile(serverSocket, file_dir);
+                            snw_transport.send_file(client, file_dir);
+                            tcp_transport.send_message(client, "File delivered from server.");
+                        }
+                    } else if (commands[0].equals("quit")) {
+                        System.out.println("Goodbye.");
+                        return;
+                    }
+                } catch (IOException ioe) {
+                    System.out.println("IOE in cache");
+                    return;
+                } catch (Exception e) {
+                    System.out.println("Error in file transfer");
+                    return;
+                }
             }
         }
     }
-
-    // takes input from the client socket
-    /*
-     * in = new DataInputStream(
-     * new BufferedInputStream(socket.getInputStream()));
-     * 
-     * String line = "";
-     * 
-     * // reads message from client until "Over" is sent
-     * while (!line.equals("Over")) {
-     * try {
-     * line = in.readUTF();
-     * System.out.println(line);
-     * 
-     * } catch (IOException i) {
-     * System.out.println(i);
-     * }
-     * }
-     * System.out.println("Closing connection");
-     * 
-     * // close connection
-     * socket.close();
-     * in.close();
-     * } catch (IOException i) {
-     * System.out.println(i);
-     * }
-     */
 
     public static void main(String args[]) {
         if (args.length != 4) {

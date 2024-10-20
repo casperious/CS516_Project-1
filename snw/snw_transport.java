@@ -42,12 +42,31 @@ public class snw_transport {
         int bytes = 0;
         FileOutputStream fileOutputStream = new FileOutputStream(fileName);
         DataInputStream in = new DataInputStream(src.getInputStream());
-        long size = in.readLong(); // read file size
-        byte[] buffer = new byte[4 * 1024];
-        while (size > 0 && (bytes = in.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+        DataOutputStream out = new DataOutputStream(src.getOutputStream());
+        String lenMessage = in.readUTF(); // read file size
+        long lenStartTime = System.nanoTime();
+
+        String[] comps = lenMessage.split(":");
+        long size = Long.parseLong(comps[1]);
+        byte[] buffer = new byte[1000];
+        while (true) {
+            long currTime = System.nanoTime();
+            if (currTime - lenStartTime >= 1000000000) {
+                System.out.println("Did not receive Data. Terminating");
+                return;
+            }
+            bytes = in.read(buffer, 0, (int) Math.min(buffer.length, size));
             fileOutputStream.write(buffer, 0, bytes);
             size -= bytes; // read upto file size
+            if (size <= 0) {
+                break;
+            }
+            out.writeUTF("ACK ");
+            lenStartTime = System.nanoTime();
+
         }
+
         fileOutputStream.close();
+        out.writeUTF("FIN close connections");
     }
 }
