@@ -6,6 +6,27 @@
     "configurations": [
         {
             "type": "java",
+            "name": "server",
+            "request": "launch",
+            "mainClass": "server.server",
+            "projectName": "Project 1_9fcefc76"
+        },
+        {
+            "type": "java",
+            "name": "client",
+            "request": "launch",
+            "mainClass": "client.client",
+            "projectName": "Project 1_9fcefc76"
+        },
+        {
+            "type": "java",
+            "name": "cache",
+            "request": "launch",
+            "mainClass": "cache.cache",
+            "projectName": "Project 1_9fcefc76"
+        },
+        {
+            "type": "java",
             "name": "cache",
             "request": "launch",
             "mainClass": "cache",

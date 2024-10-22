@@ -2,6 +2,7 @@ package snw;
 
 import java.net.*;
 import java.io.*;
+import java.lang.Exception;
 
 public class snw_transport {
     public static void send_file(Socket dest, String fp) throws Exception {
@@ -23,14 +24,28 @@ public class snw_transport {
                 long curr = System.nanoTime();
                 if (curr - startTime >= 1000000000) {
                     System.out.println("Did not receive ACK. Terminating");
-                    return;
+                    fileInputStream.close();
+                    out.close();
+                    in.close();
+                    throw new Exception("Did not receive ACK");
                 }
-                String wait = in.readUTF();
+                String wait = "";
+                while (in.available() != 0) {
+                    wait = in.readUTF();
+                }
                 String[] commands = wait.split(" ");
-                System.out.println(commands[0]);
+                // System.out.println(commands[0]);
                 if (commands[0].equals("ACK")) {
                     System.out.println("ACK received. continue transport");
                     break;
+                } else if (commands[0].equals("FIN")) {
+                    System.out.println("FIN successfully transmitted");
+                    // in.close();
+                    // out.close();
+                    fileInputStream.close();
+                    return;
+                } else {
+                    continue;
                 }
             }
         }
@@ -50,23 +65,31 @@ public class snw_transport {
         long size = Long.parseLong(comps[1]);
         byte[] buffer = new byte[1000];
         while (true) {
+
+            while (in.available() != 0) {
+                bytes = in.read(buffer, 0, (int) Math.min(buffer.length, size));
+                System.out.println("sending ACK");
+                out.writeUTF("ACK ");
+                lenStartTime = System.nanoTime();
+            }
             long currTime = System.nanoTime();
             if (currTime - lenStartTime >= 1000000000) {
                 System.out.println("Did not receive Data. Terminating");
-                return;
+                in.close();
+                out.close();
+                fileOutputStream.close();
+                throw new Exception("Did not receive data.");
             }
-            bytes = in.read(buffer, 0, (int) Math.min(buffer.length, size));
             fileOutputStream.write(buffer, 0, bytes);
             size -= bytes; // read upto file size
             if (size <= 0) {
                 break;
             }
-            out.writeUTF("ACK ");
-            lenStartTime = System.nanoTime();
 
         }
 
         fileOutputStream.close();
         out.writeUTF("FIN close connections");
+        System.out.println("FIN close connections");
     }
 }

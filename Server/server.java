@@ -1,4 +1,6 @@
 
+package server;
+
 // A Java program for a Server
 import java.net.*;
 import java.io.*;
@@ -61,7 +63,8 @@ class ThreadSocket implements Runnable {
                         return;
                     } catch (Exception e) {
                         System.out.println("Error in file transfer");
-                        return;
+                        System.exit(0);
+
                     }
                 } else {
                     try {
@@ -73,15 +76,15 @@ class ThreadSocket implements Runnable {
                         // DataOutputStream(clientSocket.getOutputStream());
 
                         String message = in.readUTF();
-                        System.out.println("Messaged received is: " + message);
+
                         String[] commands = message.split(" ");
                         if (commands[0].equals("get")) {
                             System.out.println("Looking for file in" + server_folder + commands[1]);
                             String file_dir = server_folder + commands[1];
                             File file = new File(file_dir);
                             if (file.exists()) {
-                                snw_transport.send_file(socketRef, file_dir);
                                 System.out.println("Sending file to cache");
+                                snw_transport.send_file(socketRef, file_dir);
                             } else {
                                 System.out.println("File does not exist in server");
                             }
@@ -97,6 +100,7 @@ class ThreadSocket implements Runnable {
 
                         } else if (commands[0].equals("quit")) {
                             System.out.println("Goodbye.");
+                            socketRef.close();
                             return;
                         }
                     } catch (IOException ioe) {
@@ -104,14 +108,20 @@ class ThreadSocket implements Runnable {
                         return;
                     } catch (Exception e) {
                         System.out.println("Error in file transfer");
-                        return;
+                        System.exit(0);
+                        ;
                     }
                 }
             }
 
         } catch (Exception e) {
             System.out.println(e);
+            System.exit(0);
         }
+    }
+
+    public static void main(String[] args) {
+
     }
 }
 
@@ -141,8 +151,9 @@ public class server {
             clientThread.start();
             cacheThread.start();
 
-        } catch (IOException i) {
+        } catch (Exception i) {
             System.out.println(i);
+            System.exit(0);
         }
     }
 

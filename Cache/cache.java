@@ -1,3 +1,5 @@
+package cache;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -60,6 +62,8 @@ public class cache {
                         }
                     } else if (commands[0].equals("quit")) {
                         System.out.println("Goodbye.");
+                        serverSocket.close();
+                        client.close();
                         return;
                     }
                 } catch (IOException ioe) {
@@ -67,7 +71,7 @@ public class cache {
                     return;
                 } catch (Exception e) {
                     System.out.println("Error in file transfer");
-                    return;
+                    System.exit(0);
                 }
             } else {
                 try {
@@ -76,7 +80,6 @@ public class cache {
                     DataInputStream in = new DataInputStream(client.getInputStream());
                     // DataOutputStream out = new DataOutputStream(client.getOutputStream());
                     String message = in.readUTF();
-                    System.out.println("Client says: " + message);
                     String[] commands = message.split(" ");
                     if (commands[0].equals("get")) {
                         System.out.println("Looking for file in" + cache_folder + commands[1]);
@@ -90,11 +93,15 @@ public class cache {
                             System.out.println("File does not exist in cache, fetching from server");
                             tcp_transport.send_message(serverSocket, message);
                             snw_transport.receiveFile(serverSocket, file_dir);
+                            System.out.println("Received file in cache, sending to client now.");
                             snw_transport.send_file(client, file_dir);
-                            tcp_transport.send_message(client, "File delivered from server.");
+                            tcp_transport.send_message(client, "FIN completed transmission");
+                            System.out.println("Complete");
                         }
                     } else if (commands[0].equals("quit")) {
                         System.out.println("Goodbye.");
+                        serverSocket.close();
+                        client.close();
                         return;
                     }
                 } catch (IOException ioe) {
@@ -102,7 +109,8 @@ public class cache {
                     return;
                 } catch (Exception e) {
                     System.out.println("Error in file transfer");
-                    return;
+                    System.exit(0);
+
                 }
             }
         }

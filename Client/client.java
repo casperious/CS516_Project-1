@@ -1,3 +1,5 @@
+package client;
+
 import java.io.*;
 import java.net.*;
 import tcp.tcp_transport;
@@ -81,6 +83,7 @@ public class client {
                 }
             } catch (Exception i) {
                 System.out.println(i);
+                System.exit(0);
             }
         } else if (protocol.equals("snw")) {
             try {
@@ -88,7 +91,6 @@ public class client {
                 while (true) {
                     input = System.console().readLine();
                     String[] commands = input.split(" ");
-                    System.out.println(commands[0]);
                     if (commands[0].equals("quit")) {
                         System.out.println("Exiting");
                         tcp_transport.send_message(CacheSocket, "quit ");
@@ -106,23 +108,29 @@ public class client {
 
                     } else if (commands[0].equals("get")) {
                         System.out.println("Fetching file");
-                        // PrintWriter out = new PrintWriter(CacheSocket.getOutputStream(), true);
-                        // Setup input stream to receive data from the cache
-                        // BufferedReader in = new BufferedReader(new
-                        // InputStreamReader(CacheSocket.getInputStream()));
+                        DataInputStream in = new DataInputStream(CacheSocket.getInputStream());
                         tcp_transport.send_message(CacheSocket, "get " + commands[1]);
                         String file_dir = client_folder + commands[1];
                         snw_transport.receiveFile(CacheSocket, file_dir);
                         System.out.println("Received file");
-                        DataInputStream in = new DataInputStream(CacheSocket.getInputStream());
-                        String serverResp = in.readUTF();
-                        System.out.println("Server response: " + serverResp);
+                        // need to figure out why this isnt reading FIN
+                        String cacheResp = in.readUTF();
+                        System.out.println("Cache response: " + cacheResp);
+                        String[] res = cacheResp.split(" ");
+                        if (res[0].equals("FIN")) {
+                            System.out.println("Terminating connection.");
+                            break;
+                        }
                     }
                 }
+                ServerSocket.close();
+                CacheSocket.close();
             } catch (Exception i) {
                 System.out.println(i);
+                System.exit(0);
             }
         }
+
         System.out.println("Goodbye");
         return;
     }
