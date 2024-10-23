@@ -60,6 +60,7 @@ class ThreadSocket implements Runnable {
                         }
                     } catch (IOException ioe) {
                         System.out.println("IOE in cache");
+                        System.out.println("Goodbye");
                         return;
                     } catch (Exception e) {
                         System.out.println("Error in file transfer");

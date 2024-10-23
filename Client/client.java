@@ -105,6 +105,11 @@ public class client {
                         DataInputStream in = new DataInputStream(ServerSocket.getInputStream());
                         String serverResp = in.readUTF();
                         System.out.println("Server response: " + serverResp);
+                        String[] res = serverResp.split(" ");
+                        if (res[0].equals("FIN")) {
+                            System.out.println("Terminating connection.");
+                            break;
+                        }
 
                     } else if (commands[0].equals("get")) {
                         System.out.println("Fetching file");
