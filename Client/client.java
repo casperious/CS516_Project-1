@@ -101,7 +101,7 @@ public class client {
                         String file_dir = client_folder + commands[1];
                         System.out.println("Awaiting server response");
                         tcp_transport.send_message(ServerSocket, "put " + file_dir);
-                        snw_transport.send_file(ServerSocket, file_dir);
+                        snw_transport.send_file(ServerSocket, file_dir, false);
                         DataInputStream in = new DataInputStream(ServerSocket.getInputStream());
                         String serverResp = in.readUTF();
                         System.out.println("Server response: " + serverResp);
@@ -116,7 +116,7 @@ public class client {
                         DataInputStream in = new DataInputStream(CacheSocket.getInputStream());
                         tcp_transport.send_message(CacheSocket, "get " + commands[1]);
                         String file_dir = client_folder + commands[1];
-                        snw_transport.receiveFile(CacheSocket, file_dir);
+                        snw_transport.receiveFile(CacheSocket, file_dir, false);
                         System.out.println("Received file");
                         // need to figure out why this isnt reading FIN
                         String cacheResp = in.readUTF();

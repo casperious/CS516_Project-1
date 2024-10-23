@@ -85,7 +85,7 @@ class ThreadSocket implements Runnable {
                             File file = new File(file_dir);
                             if (file.exists()) {
                                 System.out.println("Sending file to cache");
-                                snw_transport.send_file(socketRef, file_dir);
+                                snw_transport.send_file(socketRef, file_dir, true);
                             } else {
                                 System.out.println("File does not exist in server");
                             }
@@ -97,7 +97,7 @@ class ThreadSocket implements Runnable {
                             System.out.println("Putting file in " + server_folder + filename);
                             String file_dir = server_folder + filename;
                             File file = new File(file_dir);
-                            snw_transport.receiveFile(socketRef, file_dir);
+                            snw_transport.receiveFile(socketRef, file_dir, false);
 
                         } else if (commands[0].equals("quit")) {
                             System.out.println("Goodbye.");
@@ -105,10 +105,10 @@ class ThreadSocket implements Runnable {
                             return;
                         }
                     } catch (IOException ioe) {
-                        System.out.println("IOE in cache");
+                        System.out.println("IOE in cache " + ioe);
                         return;
                     } catch (Exception e) {
-                        System.out.println("Error in file transfer");
+                        System.out.println("Error in file transfer " + e);
                         System.exit(0);
                         ;
                     }

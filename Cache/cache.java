@@ -87,14 +87,14 @@ public class cache {
                         File file = new File(file_dir);
 
                         if (file.exists()) {
-                            snw_transport.send_file(client, file_dir);
+                            snw_transport.send_file(client, file_dir, false);
                             tcp_transport.send_message(client, "File delivered from cache.");
                         } else {
                             System.out.println("File does not exist in cache, fetching from server");
                             tcp_transport.send_message(serverSocket, message);
-                            snw_transport.receiveFile(serverSocket, file_dir);
+                            snw_transport.receiveFile(serverSocket, file_dir, true);
                             System.out.println("Received file in cache, sending to client now.");
-                            snw_transport.send_file(client, file_dir);
+                            snw_transport.send_file(client, file_dir, false);
                             tcp_transport.send_message(client, "FIN completed transmission");
                             System.out.println("Complete");
                         }
@@ -105,10 +105,10 @@ public class cache {
                         return;
                     }
                 } catch (IOException ioe) {
-                    System.out.println("IOE in cache");
+                    System.out.println("IOE in cache " + ioe);
                     return;
                 } catch (Exception e) {
-                    System.out.println("Error in file transfer");
+                    System.out.println("Error in file transfer " + e);
                     System.exit(0);
 
                 }
