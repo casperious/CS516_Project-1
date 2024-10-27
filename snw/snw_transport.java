@@ -39,6 +39,7 @@ public class snw_transport {
         System.out.println(
                 "Sending  " + msg + " of size " + len_msg.length + " to " + ipAddress + " " + dest_port_num);
         DatagramPacket DpSend = new DatagramPacket(len_msg, len_msg.length, ipAddress, dest_port_num);
+        Thread.sleep(200);
         ds.send(DpSend);
         System.out.println("Sent len message");
         // out.writeUTF("LEN:" + file.length());
@@ -117,6 +118,7 @@ public class snw_transport {
         } else {
             ds = new DatagramSocket(23997);
         }
+        ds.setReuseAddress(true);
         byte[] size_arr = new byte[100];
         DatagramPacket size_dp = new DatagramPacket(size_arr, 100);
         System.out.println("Waiting for len message at " + ds.getLocalPort());

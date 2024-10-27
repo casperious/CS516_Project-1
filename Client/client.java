@@ -103,13 +103,13 @@ public class client {
                         tcp_transport.send_message(ServerSocket, "put " + file_dir);
                         snw_transport.send_file(ServerSocket, file_dir, false);
                         DataInputStream in = new DataInputStream(ServerSocket.getInputStream());
-                        String serverResp = in.readUTF();
-                        System.out.println("Server response: " + serverResp);
-                        String[] res = serverResp.split(" ");
-                        if (res[0].equals("FIN")) {
-                            System.out.println("Terminating connection.");
-                            break;
-                        }
+                        // String serverResp = in.readUTF();
+                        // System.out.println("Server response: " + serverResp);
+                        // String[] res = serverResp.split(" ");
+                        // if (res[0].equals("FIN")) {
+                        // System.out.println("Terminating connection.");
+                        // break;
+                        // }
 
                     } else if (commands[0].equals("get")) {
                         System.out.println("Fetching file");
@@ -119,13 +119,13 @@ public class client {
                         snw_transport.receiveFile(CacheSocket, file_dir, false);
                         System.out.println("Received file");
                         // need to figure out why this isnt reading FIN
-                        String cacheResp = in.readUTF();
-                        System.out.println("Cache response: " + cacheResp);
-                        String[] res = cacheResp.split(" ");
-                        if (res[0].equals("FIN")) {
-                            System.out.println("Terminating connection.");
-                            break;
-                        }
+                        // String cacheResp = in.readUTF();
+                        // System.out.println("Cache response: " + cacheResp);
+                        // String[] res = cacheResp.split(" ");
+                        // if (res[0].equals("FIN")) {
+                        // System.out.println("Terminating connection.");
+                        // break;
+                        // }
                     }
                 }
                 ServerSocket.close();
@@ -137,6 +137,7 @@ public class client {
         }
 
         System.out.println("Goodbye");
+        System.exit(0);
         return;
     }
 
