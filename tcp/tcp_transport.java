@@ -5,6 +5,7 @@ import java.io.*;
 
 public class tcp_transport {
 
+    // Sends message from local machine to destination socket
     public static void send_message(Socket dest, String message) {
         try {
             DataOutputStream out = new DataOutputStream(dest.getOutputStream());
@@ -17,6 +18,7 @@ public class tcp_transport {
         }
     }
 
+    // sends file at fp to destination socket
     public static void send_file(Socket dest, String fp) throws Exception {
         int bytes = 0;
         File file = new File(fp);
@@ -33,6 +35,7 @@ public class tcp_transport {
 
     }
 
+    // receives file from source socket and stores at fileName
     public static void receiveFile(Socket src, String fileName) throws Exception {
         int bytes = 0;
         FileOutputStream fileOutputStream = new FileOutputStream(fileName);

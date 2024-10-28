@@ -13,46 +13,47 @@ class ThreadSocket implements Runnable {
     private String server_folder = "./server_fl/";
 
     public ThreadSocket(Socket sc, String protocolArg) {
-        socketRef = sc;
-        protocol = protocolArg;
+        socketRef = sc; // cache or client socket loaded for thread
+        protocol = protocolArg; // protocol for thread
     }
 
+    /*
+     * Multithreaded implementation to listen for put from client, and get
+     * from cache at the same time.
+     */
     public void run() {
         try {
-            System.out.println("Running thread " + Thread.currentThread().getId());
             while (true) {
                 if (protocol.equals("tcp")) {
                     try {
 
                         // Setup input and output streams for communication with the client
                         DataInputStream in = new DataInputStream(socketRef.getInputStream());
-                        // DataInputStream(clientSocket.getInputStream());
                         DataOutputStream out = new DataOutputStream(socketRef.getOutputStream());
-                        // DataOutputStream(clientSocket.getOutputStream());
-
+                        // parse input message
                         String message = in.readUTF();
-                        System.out.println("Messaged received is: " + message);
                         String[] commands = message.split(" ");
                         if (commands[0].equals("get")) {
-                            System.out.println("Looking for file in" + server_folder + commands[1]);
                             String file_dir = server_folder + commands[1];
                             File file = new File(file_dir);
                             if (file.exists()) {
+                                // send file via tcp to requesting socket
                                 tcp_transport.send_file(socketRef, file_dir);
-                                System.out.println("Sending file to cache");
+                                // send confirmation message
                                 tcp_transport.send_message(socketRef, "File delivered from server.");
                             } else {
                                 System.out.println("File does not exist in server");
                             }
                         } else if (commands[0].equals("put")) {
-
+                            // initialize file for incoming data
                             String[] file_loc = commands[1].split("/");
                             int len = file_loc.length;
                             String filename = file_loc[len - 1];
-                            System.out.println("Putting file in " + server_folder + filename);
                             String file_dir = server_folder + filename;
                             File file = new File(file_dir);
+                            // receive file once file location is created
                             tcp_transport.receiveFile(socketRef, file_dir);
+                            // send confirmation message
                             tcp_transport.send_message(socketRef, "File successfully uploaded.");
                         } else if (commands[0].equals("quit")) {
                             System.out.println("Goodbye.");
@@ -67,36 +68,34 @@ class ThreadSocket implements Runnable {
                         System.exit(0);
 
                     }
-                } else {
+                } else { // snw
                     try {
 
                         // Setup input and output streams for communication with the client
                         DataInputStream in = new DataInputStream(socketRef.getInputStream());
-                        // DataInputStream(clientSocket.getInputStream());
                         DataOutputStream out = new DataOutputStream(socketRef.getOutputStream());
-                        // DataOutputStream(clientSocket.getOutputStream());
-
+                        // parse input message
                         String message = in.readUTF();
 
                         String[] commands = message.split(" ");
                         if (commands[0].equals("get")) {
-                            System.out.println("Looking for file in" + server_folder + commands[1]);
+
                             String file_dir = server_folder + commands[1];
                             File file = new File(file_dir);
                             if (file.exists()) {
-                                System.out.println("Sending file to cache");
+                                // send file to cache via snw
                                 snw_transport.send_file(socketRef, file_dir, true);
                             } else {
                                 System.out.println("File does not exist in server");
                             }
                         } else if (commands[0].equals("put")) {
-
+                            // initialize file to store incoming data
                             String[] file_loc = commands[1].split("/");
                             int len = file_loc.length;
                             String filename = file_loc[len - 1];
-                            System.out.println("Putting file in " + server_folder + filename);
                             String file_dir = server_folder + filename;
                             File file = new File(file_dir);
+                            // receive file via snw
                             snw_transport.receiveFile(socketRef, file_dir, false);
 
                         } else if (commands[0].equals("quit")) {
@@ -141,10 +140,13 @@ public class server {
             server = new ServerSocket(port);
             System.out.println("Server started");
             System.out.println("Waiting for cache");
+
+            // First accept cache connection
             cacheSocket = server.accept();
             System.out.println("Cache accepted");
             System.out.println("Waiting for a client ...");
 
+            // then accept any clients
             clientSocket = server.accept();
             System.out.println("Client accepted");
             Thread clientThread = new Thread(new ThreadSocket(clientSocket, protocol));

@@ -16,9 +16,9 @@ public class cache {
     private DataInputStream in = null;
     private String cache_folder = "./cache_fl/";
 
-    // constructor with port
+    // constructor to run cache
     public cache(int port, String serverIp, int serverPort, String protocol) {
-        // starts server and waits for a connection
+        // starts cache and waits for a connection
         try {
             if (serverIp == "localhost") {
                 serverIp = "127.0.0.1";
@@ -41,19 +41,19 @@ public class cache {
 
                     // Setup input and output streams for communication with the client
                     DataInputStream in = new DataInputStream(client.getInputStream());
-                    // DataOutputStream out = new DataOutputStream(client.getOutputStream());
                     String message = in.readUTF();
-                    System.out.println("Client says: " + message);
+                    // parse client message
                     String[] commands = message.split(" ");
                     if (commands[0].equals("get")) {
                         System.out.println("Looking for file in" + cache_folder + commands[1]);
                         String file_dir = cache_folder + commands[1];
                         File file = new File(file_dir);
-
+                        // if file is in cache_fl send it to client
                         if (file.exists()) {
                             tcp_transport.send_file(client, file_dir);
                             tcp_transport.send_message(client, "File delivered from cache.");
                         } else {
+                            // fetch file from server, store in cache_fl and then transmit to client.
                             System.out.println("File does not exist in cache, fetching from server");
                             tcp_transport.send_message(serverSocket, message);
                             tcp_transport.receiveFile(serverSocket, file_dir);
@@ -78,23 +78,27 @@ public class cache {
 
                     // Setup input and output streams for communication with the client
                     DataInputStream in = new DataInputStream(client.getInputStream());
-                    // DataOutputStream out = new DataOutputStream(client.getOutputStream());
+                    // get tcp message from client
                     String message = in.readUTF();
                     String[] commands = message.split(" ");
+                    // No put functionality for cache
                     if (commands[0].equals("get")) {
-                        System.out.println("Looking for file in" + cache_folder + commands[1]);
                         String file_dir = cache_folder + commands[1];
                         File file = new File(file_dir);
-
+                        // if file is in cache_fl send via snw to client
                         if (file.exists()) {
                             snw_transport.send_file(client, file_dir, false);
                             tcp_transport.send_message(client, "File delivered from cache.");
                         } else {
                             System.out.println("File does not exist in cache, fetching from server");
+                            // send get message to server via tcp
                             tcp_transport.send_message(serverSocket, message);
+                            // get file from server via snw
                             snw_transport.receiveFile(serverSocket, file_dir, true);
                             System.out.println("Received file in cache, sending to client now.");
+                            // send file to client via snw
                             snw_transport.send_file(client, file_dir, false);
+                            // send fin message
                             tcp_transport.send_message(client, "FIN completed transmission");
                             System.out.println("Complete");
                         }

@@ -5,18 +5,27 @@ import java.io.*;
 import java.lang.Exception;
 
 public class snw_transport {
+    /*
+     * Package function to send a file from local socket to destination socket IP
+     * address and Port
+     * params:-
+     * dest - Socket at destination. Used by parent client/cache/socket for TCP
+     * messages, passed as param to extract IP and port
+     * fp - filepath of file to send
+     * sendingToCache - bool flag to alter port number depending on if cache is
+     * being sent to
+     */
     public static void send_file(Socket dest, String fp, boolean sendingToCache) throws Exception {
         int dest_port_num = 23998;
         int src_port_num = 23999;
         if (sendingToCache) {
-            dest_port_num = 23997;
+            dest_port_num = 23997; // cache port is hardwired to 23997. Pray it doesn't get used
         }
         File file = new File(fp);
         int bytes = 0;
         FileInputStream fileInputStream = new FileInputStream(file);
-        // DataOutputStream out = new DataOutputStream(dest.getOutputStream());
-        // DataInputStream in = new DataInputStream(dest.getInputStream());
-        // send file size
+
+        // Process IP and port to send to
         String dest_ip = dest.getRemoteSocketAddress().toString();
         System.out.println("Dest ip before processing is " + dest_ip);
         if (dest_ip.charAt(0) == 'l') {
@@ -25,64 +34,52 @@ public class snw_transport {
         } else if (dest_ip.charAt(0) == '/') {
             dest_ip = dest_ip.substring(1);
         }
-        // dest_ip = dest_ip.substring(1);
         String[] breakdown = dest_ip.split(":");
         dest_ip = breakdown[0];
-        System.out.println("Dest ip is " + dest_ip + " and port is " + dest.getPort());
         InetAddress ipAddress = InetAddress.getByName(dest_ip);
-        System.out.println("Got ip address variable " + ipAddress);
+
+        // Send length message
         String msg = "LEN: " + file.length();
+        Thread.sleep(200);
         DatagramSocket ds = new DatagramSocket(src_port_num);
-        System.out.println("Created default datagram socket at port " + ds.getLocalPort());
         byte[] len_msg = msg.getBytes();
 
-        System.out.println(
-                "Sending  " + msg + " of size " + len_msg.length + " to " + ipAddress + " " + dest_port_num);
         DatagramPacket DpSend = new DatagramPacket(len_msg, len_msg.length, ipAddress, dest_port_num);
+
+        // Sleep to avoid race conditions and ensure smooth data transfer
         Thread.sleep(200);
         ds.send(DpSend);
-        System.out.println("Sent len message");
-        // out.writeUTF("LEN:" + file.length());
+
         // break file into chunks
         byte[] buffer = new byte[1000];
         while ((bytes = fileInputStream.read(buffer)) != -1) {
-            System.out.println("Writing: " + (char) (buffer[0]) + " " + (char) (buffer[1]) + " to " + ipAddress
-                    + " at port " + dest_port_num);
-            // out.write(buffer, 0, bytes);
             DatagramPacket chunks = new DatagramPacket(buffer, bytes, ipAddress, dest_port_num);
             ds.send(chunks);
-            // out.flush();
-            // buffer = new byte[1000];
+            // set timeout to 1s
+            ds.setSoTimeout(1000);
             long startTime = System.nanoTime();
-            System.out.println("Waiting for ACK");
+            // old implementation before I found setSoTimeout. implementation works so have
+            // left it as is
             while (true) {
                 long curr = System.nanoTime();
                 if (curr - startTime >= 1000000000) {
                     System.out.println("Did not receive ACK. Terminating");
                     fileInputStream.close();
                     ds.close();
-                    // out.close();
-                    // in.close();
                     throw new Exception("Did not receive ACK");
                 }
                 byte[] ack_buf = new byte[100];
                 DatagramPacket ack = new DatagramPacket(ack_buf, 100);
-                // while (ds.available() != 0) {
-                // wait = in.readUTF();
-                System.out.println("Waiting to receive");
+                // Receive ACK/FIN message
                 ds.receive(ack);
-                // }
+
                 String ack_msg = new String(ack_buf);
-                System.out.println("Recieved " + ack_msg);
                 String[] commands = ack_msg.split(" ");
-                // System.out.println(commands[0]);
                 if (commands[0].equals("ACK")) {
-                    System.out.println("ACK received. continue transport");
+                    // send next packet
                     break;
                 } else if (commands[0].equals("FIN")) {
-                    System.out.println("FIN successfully transmitted");
-                    // in.close();
-                    // out.close();
+                    // terminate connection
                     ds.close();
                     fileInputStream.close();
                     return;
@@ -92,27 +89,29 @@ public class snw_transport {
                 }
             }
         }
-        System.out.println("Exited loop without FIN");
         byte[] ack_buf = new byte[100];
         DatagramPacket ack = new DatagramPacket(ack_buf, 100);
-        // while (ds.available() != 0) {
-        // wait = in.readUTF();
-        System.out.println("Waiting to receive");
+        // receive final message
         ds.receive(ack);
-        // }
+
         String ack_msg = new String(ack_buf);
         System.out.println("Recieved " + ack_msg + " Successfully");
         ds.close();
         fileInputStream.close();
     }
 
+    /*
+     * Receives file from source Ip, and stores it to fileName
+     * params:-
+     * src - Source socket. Used by parent client/cache/socket for TCP
+     * messages, passed as param to extract IP and port
+     * fileName - name of file extracted from put/get message to store incoming file
+     * isCache - bool to bind port number to 23997 if is cache
+     */
     public static void receiveFile(Socket src, String fileName, boolean isCache) throws Exception {
         int bytes = 0;
         FileOutputStream fileOutputStream = new FileOutputStream(fileName);
-        // DataInputStream in = new DataInputStream(src.getInputStream());
-        // DataOutputStream out = new DataOutputStream(src.getOutputStream());
-        System.out.println("SRC socket at " + src.getRemoteSocketAddress() + " " + src.getPort());
-        DatagramSocket ds;
+        DatagramSocket ds; // initialize socket to 23998 if client, 23997 if cache
         if (!isCache) {
             ds = new DatagramSocket(23998);
         } else {
@@ -121,17 +120,16 @@ public class snw_transport {
         ds.setReuseAddress(true);
         byte[] size_arr = new byte[100];
         DatagramPacket size_dp = new DatagramPacket(size_arr, 100);
-        System.out.println("Waiting for len message at " + ds.getLocalPort());
+        // receive length message
         ds.receive(size_dp);
-        // String lenMessage = in.readUTF(); // read file size
+
         long lenStartTime = System.nanoTime();
         String lenMessage = new String(size_arr);
-        System.out.println("Messaged received in receiveFile is " + lenMessage);
         String[] comps = lenMessage.split(":");
+
+        // parse length
         long size = Long.parseLong(comps[1].trim());
-        System.out.println("Size to read is " + size);
         String src_ip = src.getRemoteSocketAddress().toString();
-        System.out.println("Src ip from socket is " + src_ip);
         String port = "";
         if (src_ip.charAt(0) == 'l') {
             String[] seperate = src_ip.split("/");
@@ -139,13 +137,12 @@ public class snw_transport {
         } else if (src_ip.charAt(0) == '/') {
             src_ip = src_ip.substring(1);
         }
-        System.out.println("extracting ip from " + src_ip);
-        // src_ip = src_ip.substring(1);
         String[] breakdown = src_ip.split(":");
         src_ip = breakdown[0];
         port = breakdown[1];
-        System.out.println("getting inetaddress by name of " + src_ip);
         InetAddress ipAddress = InetAddress.getByName(src_ip);
+
+        // initialize buffer
         byte[] buffer = new byte[1000];
         while (size > 0) {
             int chunkSize = 0;
@@ -155,42 +152,35 @@ public class snw_transport {
                 chunkSize = (int) size;
             }
             DatagramPacket chunk = new DatagramPacket(buffer, chunkSize);
-            // while (true) {
-            // bytes = in.read(buffer, 0, 1000); // (int) Math.min(buffer.length, size)
             ds.receive(chunk);
-            System.out.println(
-                    "Read length: " + chunk.getLength() + " " + (char) buffer[0] + " " + (char) buffer[1]
-                            + " sending ACK");
-            // out.writeUTF("ACK ");
+
+            // send ACK
             String msg = "ACK ";
             byte[] len_msg = msg.getBytes();
-            System.out.println("Sending ack to " + ipAddress + " " + src.getPort());
             DatagramPacket AckSend = new DatagramPacket(len_msg, msg.length(), ipAddress, 23999);
             ds.send(AckSend);
+            ds.setSoTimeout(1000);
+            // start tracking time to receive next packet
+            // Old implementation of manually tracking time.
             lenStartTime = System.nanoTime();
             long currTime = System.nanoTime();
             if (currTime - lenStartTime >= 1000000000) {
                 System.out.println("Did not receive Data. Terminating");
-                // in.close();
-                // out.close();
                 ds.close();
                 fileOutputStream.close();
                 throw new Exception("Did not receive data.");
             }
             fileOutputStream.write(buffer, 0, chunkSize);
             size -= chunkSize; // read upto file size
-            System.out.println("Remaining Size is now " + size);
-            // }
 
         }
 
         fileOutputStream.close();
+        // send FIN
         String f_msg = "FIN close connection ";
         byte[] fin_msg = f_msg.getBytes();
         DatagramPacket FinSend = new DatagramPacket(fin_msg, f_msg.length(), ipAddress, 23999);
         ds.send(FinSend);
-        // out.writeUTF("FIN close connections");
-        System.out.println("FIN close connections");
         ds.close();
     }
 }

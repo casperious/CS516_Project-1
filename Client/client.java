@@ -14,7 +14,15 @@ public class client {
 
     private String client_folder = "./client_fl/";
 
-    // constructor to put ip address and port
+    // constructor to run client
+    /*
+     * params:-
+     * ServerIp - IP address of server
+     * ServerPort - Port number for server
+     * CacheIp - IP address of cache
+     * CachePort - Port number for cache
+     * protocol - tcp or snw
+     */
     public client(String ServerIp, int ServerPort, String CacheIp, int CachePort, String protocol) {
         // establish a connection
         try {
@@ -28,12 +36,7 @@ public class client {
             System.out.println("Connected to Server");
             CacheSocket = new Socket(CacheIp, CachePort);
             System.out.println("Connected to Cache");
-            // takes input from terminal
-            // input = new DataInputStream(System.in);
 
-            // sends output to the socket
-            // out = new DataOutputStream(
-            // ServerSocket.getOutputStream());
         } catch (UnknownHostException u) {
             System.out.println(u);
             return;
@@ -44,38 +47,43 @@ public class client {
         String input = "";
         // Input loop
         if (protocol.equals("tcp")) {
-
             try {
 
                 while (true) {
+                    System.out.print("Enter command: ");
                     input = System.console().readLine();
+
+                    // parse user input
                     String[] commands = input.split(" ");
-                    System.out.println(commands[0]);
+
                     if (commands[0].equals("quit")) {
                         System.out.println("Exiting");
                         tcp_transport.send_message(CacheSocket, "quit ");
                         tcp_transport.send_message(ServerSocket, "quit ");
                         break;
                     } else if (commands[0].equals("put")) {
-                        System.out.println("Uploading file at " + commands[1]);
                         String file_dir = client_folder + commands[1];
                         System.out.println("Awaiting server response");
+                        // send message to server via tcp
                         tcp_transport.send_message(ServerSocket, "put " + file_dir);
+
+                        // send file via tcp
                         tcp_transport.send_file(ServerSocket, file_dir);
+
+                        // Receive server response
                         DataInputStream in = new DataInputStream(ServerSocket.getInputStream());
                         String serverResp = in.readUTF();
                         System.out.println("Server response: " + serverResp);
 
                     } else if (commands[0].equals("get")) {
-                        System.out.println("Fetching file");
-                        // PrintWriter out = new PrintWriter(CacheSocket.getOutputStream(), true);
-                        // Setup input stream to receive data from the cache
-                        // BufferedReader in = new BufferedReader(new
-                        // InputStreamReader(CacheSocket.getInputStream()));
+                        // send message via tcp
                         tcp_transport.send_message(CacheSocket, "get " + commands[1]);
                         String file_dir = client_folder + commands[1];
+
+                        // receive file via tcp
                         tcp_transport.receiveFile(CacheSocket, file_dir);
-                        System.out.println("Received file");
+
+                        // receive server response
                         DataInputStream in = new DataInputStream(CacheSocket.getInputStream());
                         String serverResp = in.readUTF();
                         System.out.println("Server response: " + serverResp);
@@ -87,45 +95,36 @@ public class client {
             }
         } else if (protocol.equals("snw")) {
             try {
-
                 while (true) {
+                    System.out.print("Enter command: ");
                     input = System.console().readLine();
-                    String[] commands = input.split(" ");
+                    String[] commands = input.split(" "); // parse user input
                     if (commands[0].equals("quit")) {
                         System.out.println("Exiting");
                         tcp_transport.send_message(CacheSocket, "quit ");
                         tcp_transport.send_message(ServerSocket, "quit ");
                         break;
                     } else if (commands[0].equals("put")) {
-                        System.out.println("Uploading file at " + commands[1]);
                         String file_dir = client_folder + commands[1];
                         System.out.println("Awaiting server response");
+                        // send put message to server via tcp
                         tcp_transport.send_message(ServerSocket, "put " + file_dir);
+
+                        // send file to server via snw
                         snw_transport.send_file(ServerSocket, file_dir, false);
-                        DataInputStream in = new DataInputStream(ServerSocket.getInputStream());
-                        // String serverResp = in.readUTF();
-                        // System.out.println("Server response: " + serverResp);
-                        // String[] res = serverResp.split(" ");
-                        // if (res[0].equals("FIN")) {
-                        // System.out.println("Terminating connection.");
-                        // break;
-                        // }
+
+                        System.out.println("Server Response: File successfully uploaded");
 
                     } else if (commands[0].equals("get")) {
-                        System.out.println("Fetching file");
-                        DataInputStream in = new DataInputStream(CacheSocket.getInputStream());
+                        // send get message to cache via tcp
                         tcp_transport.send_message(CacheSocket, "get " + commands[1]);
                         String file_dir = client_folder + commands[1];
+
+                        // receive file from cache via snw
                         snw_transport.receiveFile(CacheSocket, file_dir, false);
-                        System.out.println("Received file");
-                        // need to figure out why this isnt reading FIN
-                        // String cacheResp = in.readUTF();
-                        // System.out.println("Cache response: " + cacheResp);
-                        // String[] res = cacheResp.split(" ");
-                        // if (res[0].equals("FIN")) {
-                        // System.out.println("Terminating connection.");
-                        // break;
-                        // }
+
+                        System.out.println("Server Response: File delivered");
+
                     }
                 }
                 ServerSocket.close();
